@@ -78,6 +78,20 @@ public final class TypeUtils {
     }
 
     /**
+     * Utility method to check whether the TypeMirror matches
+     * with the Class passed in. If the type passed in is parameterized
+     * then it will strip the types from the type and will compare
+     * the raw type.
+     *
+     * @param type  The TypeMirror to check.
+     * @param clazz the Class to validate the TypeMirror against.
+     * @return true if the raw types match, false otherwise.
+     */
+    public static boolean doClassesMatch(@NotNull TypeMirror type, @NotNull Class clazz) {
+        return getOuterClassType(type).equals(clazz.getName());
+    }
+
+    /**
      * Determines whether or not the type has type parameters.
      *
      * @param type the type to check.

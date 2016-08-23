@@ -330,19 +330,19 @@ public class ParseGenerator {
 
     @Nullable
     private static String getReadTokenType(@NotNull TypeMirror type) {
-        if (type.toString().equals(long.class.getName())) {
+        if (TypeUtils.doClassesMatch(type, long.class)) {
             return "com.google.gson.stream.JsonToken.NUMBER";
-        } else if (type.toString().equals(double.class.getName())) {
+        } else if (TypeUtils.doClassesMatch(type, double.class)) {
             return "com.google.gson.stream.JsonToken.NUMBER";
-        } else if (type.toString().equals(boolean.class.getName())) {
+        } else if (TypeUtils.doClassesMatch(type, boolean.class)) {
             return "com.google.gson.stream.JsonToken.BOOLEAN";
-        } else if (type.toString().equals(String.class.getName())) {
+        } else if (TypeUtils.doClassesMatch(type, String.class)) {
             return "com.google.gson.stream.JsonToken.STRING";
-        } else if (type.toString().equals(int.class.getName())) {
+        } else if (TypeUtils.doClassesMatch(type, int.class)) {
             return "com.google.gson.stream.JsonToken.NUMBER";
-        } else if (TypeUtils.getOuterClassType(type).equals(ArrayList.class.getName())) {
+        } else if (TypeUtils.doClassesMatch(type, ArrayList.class)) {
             return "com.google.gson.stream.JsonToken.BEGIN_ARRAY";
-        } else if (TypeUtils.getOuterClassType(type).equals(HashMap.class.getName())) {
+        } else if (TypeUtils.doClassesMatch(type, HashMap.class)) {
             return "com.google.gson.stream.JsonToken.BEGIN_OBJECT";
         } else {
             return null;
@@ -352,19 +352,19 @@ public class ParseGenerator {
 
     @NotNull
     private String getReadType(@NotNull TypeMirror type) {
-        if (type.toString().equals(long.class.getName())) {
+        if (TypeUtils.doClassesMatch(type, long.class)) {
             return "reader.nextLong();";
-        } else if (type.toString().equals(double.class.getName())) {
+        } else if (TypeUtils.doClassesMatch(type, double.class)) {
             return "reader.nextDouble();";
-        } else if (type.toString().equals(boolean.class.getName())) {
+        } else if (TypeUtils.doClassesMatch(type, boolean.class)) {
             return "reader.nextBoolean();";
-        } else if (type.toString().equals(String.class.getName())) {
+        } else if (TypeUtils.doClassesMatch(type, String.class)) {
             return "reader.nextString();";
-        } else if (type.toString().equals(int.class.getName())) {
+        } else if (TypeUtils.doClassesMatch(type, int.class)) {
             return "reader.nextInt();";
-        } else if (TypeUtils.getOuterClassType(type).equals(ArrayList.class.getName())) {
+        } else if (TypeUtils.doClassesMatch(type, ArrayList.class)) {
             return "ParseUtils.parseArray(gson, reader, " + getInnerListType(type).toString() + ".class);";
-        } else if (TypeUtils.getOuterClassType(type).equals(HashMap.class.getName())) {
+        } else if (TypeUtils.doClassesMatch(type, HashMap.class)) {
             return "ParseUtils.parseMap(gson, reader, " + getInnerMapValueType(type).toString() + ".class);";
         } else {
             String typeName = type.toString();
@@ -379,16 +379,16 @@ public class ParseGenerator {
 
     @NotNull
     private String getWriteType(@NotNull TypeMirror type, @NotNull String variableName) {
-        if (type.toString().equals(long.class.getName()) ||
-            type.toString().equals(double.class.getName()) ||
-            type.toString().equals(boolean.class.getName()) ||
-            type.toString().equals(String.class.getName()) ||
-            type.toString().equals(int.class.getName())) {
+        if (TypeUtils.doClassesMatch(type, long.class) ||
+            TypeUtils.doClassesMatch(type, double.class) ||
+            TypeUtils.doClassesMatch(type, boolean.class) ||
+            TypeUtils.doClassesMatch(type, String.class) ||
+            TypeUtils.doClassesMatch(type, int.class)) {
             return "writer.value(object." + variableName + ");";
-        } else if (TypeUtils.getOuterClassType(type).equals(ArrayList.class.getName())) {
+        } else if (TypeUtils.doClassesMatch(type, ArrayList.class)) {
             return "ParseUtils.write(gson, writer, " + getInnerListType(type).toString() + ".class, object." +
                    variableName + ");";
-        } else if (TypeUtils.getOuterClassType(type).equals(HashMap.class.getName())) {
+        } else if (TypeUtils.doClassesMatch(type, HashMap.class)) {
             return "ParseUtils.write(gson, writer, " + getInnerMapValueType(type).toString() +
                    ".class, object." + variableName + ");";
         } else {
