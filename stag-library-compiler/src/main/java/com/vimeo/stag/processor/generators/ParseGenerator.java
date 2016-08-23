@@ -44,6 +44,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -70,6 +71,57 @@ public class ParseGenerator {
     public ParseGenerator(@NotNull Set<String> supportedTypes, @NotNull Filer filer) {
         mSupportedTypes = new HashSet<>(supportedTypes);
         mFiler = filer;
+    }
+
+    @NotNull
+    private static MethodSpec generateParseMapSpec() {
+        TypeVariableName genericTypeName = TypeVariableName.get("T");
+
+        return MethodSpec.methodBuilder("parseMap")
+                .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
+                .addTypeVariable(genericTypeName)
+                .returns(ParameterizedTypeName.get(ClassName.get(HashMap.class), ClassName.get(String.class),
+                                                   genericTypeName))
+                .addParameter(Gson.class, "gson")
+                .addParameter(JsonReader.class, "reader")
+                .addParameter(ParameterizedTypeName.get(ClassName.get(Class.class), genericTypeName), "clazz")
+                .addException(IOException.class)
+                .addCode("if (reader.peek() != com.google.gson.stream.JsonToken.BEGIN_OBJECT) {\n" +
+                         "\treader.skipValue();\n" +
+                         "\treturn null;\n" +
+                         "}\n" +
+                         "reader.beginObject();\n" +
+                         "\n" +
+                         "HashMap<String, T> list = Stag.readMapFromAdapter(gson, clazz, reader);\n" +
+                         "\n" +
+                         "reader.endObject();\n" +
+                         "return list;\n")
+                .build();
+    }
+
+    @NotNull
+    private static MethodSpec generateWriteMapSpec() {
+        TypeVariableName genericType = TypeVariableName.get("T");
+        return MethodSpec.methodBuilder("write")
+                .addModifiers(Modifier.PUBLIC, Modifier.STATIC)
+                .returns(void.class)
+                .addTypeVariable(genericType)
+                .addException(IOException.class)
+                .addParameter(Gson.class, "gson")
+                .addParameter(JsonWriter.class, "writer")
+                .addParameter(Class.class, "clazz")
+                .addParameter(
+                        ParameterizedTypeName.get(ClassName.get(HashMap.class), ClassName.get(String.class),
+                                                  genericType), "map")
+                .addCode("if (map == null) {\n" +
+                         "\treturn;\n" +
+                         "}\n" +
+                         "writer.beginObject();\n" +
+                         "\n" +
+                         "Stag.writeMapToAdapter(gson, clazz, writer, map);\n" +
+                         "\n" +
+                         "writer.beginObject();\n")
+                .build();
     }
 
     @NotNull
@@ -136,6 +188,8 @@ public class ParseGenerator {
         TypeSpec.Builder typeSpecBuilder =
                 TypeSpec.classBuilder(CLASS_PARSE_UTILS).addModifiers(Modifier.FINAL);
 
+        typeSpecBuilder.addMethod(ParseGenerator.generateParseMapSpec());
+        typeSpecBuilder.addMethod(ParseGenerator.generateWriteMapSpec());
         typeSpecBuilder.addMethod(ParseGenerator.generateParseArraySpec());
         typeSpecBuilder.addMethod(ParseGenerator.generateWriteArraySpec());
 
@@ -288,6 +342,8 @@ public class ParseGenerator {
             return "com.google.gson.stream.JsonToken.NUMBER";
         } else if (TypeUtils.getOuterClassType(type).equals(ArrayList.class.getName())) {
             return "com.google.gson.stream.JsonToken.BEGIN_ARRAY";
+        } else if (TypeUtils.getOuterClassType(type).equals(HashMap.class.getName())) {
+            return "com.google.gson.stream.JsonToken.BEGIN_OBJECT";
         } else {
             return null;
         }
@@ -308,6 +364,8 @@ public class ParseGenerator {
             return "reader.nextInt();";
         } else if (TypeUtils.getOuterClassType(type).equals(ArrayList.class.getName())) {
             return "ParseUtils.parseArray(gson, reader, " + getInnerListType(type).toString() + ".class);";
+        } else if (TypeUtils.getOuterClassType(type).equals(HashMap.class.getName())) {
+            return "ParseUtils.parseMap(gson, reader, " + getInnerMapValueType(type).toString() + ".class);";
         } else {
             String typeName = type.toString();
             if (!mSupportedTypes.contains(type.toString())) {
@@ -330,6 +388,9 @@ public class ParseGenerator {
         } else if (TypeUtils.getOuterClassType(type).equals(ArrayList.class.getName())) {
             return "ParseUtils.write(gson, writer, " + getInnerListType(type).toString() + ".class, object." +
                    variableName + ");";
+        } else if (TypeUtils.getOuterClassType(type).equals(HashMap.class.getName())) {
+            return "ParseUtils.write(gson, writer, " + getInnerMapValueType(type).toString() +
+                   ".class, object." + variableName + ");";
         } else {
             if (!mSupportedTypes.contains(type.toString())) {
                 return StagGenerator.CLASS_STAG + ".writeToAdapter(gson, " + type +
@@ -350,6 +411,10 @@ public class ParseGenerator {
 
     private static TypeMirror getInnerListType(@NotNull TypeMirror type) {
         return ((DeclaredType) type).getTypeArguments().get(0);
+    }
+
+    private static TypeMirror getInnerMapValueType(@NotNull TypeMirror type) {
+        return ((DeclaredType) type).getTypeArguments().get(1);
     }
 
 }

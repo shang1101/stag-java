@@ -44,6 +44,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Set;
 
 import javax.annotation.processing.Filer;
@@ -79,6 +80,8 @@ public class StagGenerator {
 
         adaptersBuilder.addMethod(getWriteToAdapterSpec(genericTypeName));
         adaptersBuilder.addMethod(getReadFromAdapterSpec(genericTypeName));
+        adaptersBuilder.addMethod(getWriteMapToAdapterSpec(genericTypeName));
+        adaptersBuilder.addMethod(getReadMapFromAdapterSpec(genericTypeName));
         adaptersBuilder.addMethod(getWriteListToAdapterSpec(genericTypeName));
         adaptersBuilder.addMethod(getReadListFromAdapterSpec(genericTypeName));
 
@@ -127,6 +130,50 @@ public class StagGenerator {
                 .addParameter(ParameterizedTypeName.get(ClassName.get(Class.class), genericTypeName), "clazz")
                 .addParameter(JsonReader.class, "in")
                 .addCode("return gson.getAdapter(clazz).read(in);\n")
+                .build();
+    }
+
+    @NotNull
+    private static MethodSpec getWriteMapToAdapterSpec(@NotNull TypeVariableName genericTypeName) {
+        return MethodSpec.methodBuilder("writeMapToAdapter")
+                .addModifiers(Modifier.STATIC)
+                .returns(void.class)
+                .addTypeVariable(genericTypeName)
+                .addException(IOException.class)
+                .addParameter(Gson.class, "gson")
+                .addParameter(ParameterizedTypeName.get(ClassName.get(Class.class), genericTypeName), "clazz")
+                .addParameter(JsonWriter.class, "out")
+                .addParameter(
+                        ParameterizedTypeName.get(ClassName.get(HashMap.class), ClassName.get(String.class),
+                                                  genericTypeName), "map")
+                .addCode("com.google.gson.TypeAdapter<T> typeAdapter = gson.getAdapter(clazz);\n" +
+                         "\n" +
+                         "for (java.util.Map.Entry<String, T> entry : map.entrySet()) {\n" +
+                         "\tout.name(entry.getKey());\n" +
+                         "\ttypeAdapter.write(out, entry.getValue());\n" +
+                         "}\n")
+                .build();
+    }
+
+    @NotNull
+    private static MethodSpec getReadMapFromAdapterSpec(@NotNull TypeVariableName genericTypeName) {
+        return MethodSpec.methodBuilder("readMapFromAdapter")
+                .addModifiers(Modifier.STATIC)
+                .returns(ParameterizedTypeName.get(ClassName.get(HashMap.class), ClassName.get(String.class),
+                                                   genericTypeName))
+                .addTypeVariable(genericTypeName)
+                .addException(IOException.class)
+                .addParameter(Gson.class, "gson")
+                .addParameter(ParameterizedTypeName.get(ClassName.get(Class.class), genericTypeName), "clazz")
+                .addParameter(JsonReader.class, "in")
+                .addCode("HashMap<String, T> map = new java.util.HashMap<>();\n" +
+                         "com.google.gson.TypeAdapter<T> typeAdapter = gson.getAdapter(clazz);\n" +
+                         "\n" +
+                         "while (in.hasNext()) {\n" +
+                         "\tmap.put(in.nextName(), typeAdapter.read(in));\n" +
+                         "}\n" +
+                         "\n" +
+                         "return map;\n")
                 .build();
     }
 

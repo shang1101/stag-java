@@ -33,8 +33,11 @@ public class User {
     @GsonAdapterKey("location")
     public String mLocation;
 
+    @GsonAdapterKey("preferences")
+    public Preferences mPreferences;
+
     @Override
     public String toString() {
-        return "name: " + mName + ", location: " + mLocation;
+        return "name: " + mName + ", location: " + mLocation + ", preferences: " + mPreferences.toString();
     }
 }
