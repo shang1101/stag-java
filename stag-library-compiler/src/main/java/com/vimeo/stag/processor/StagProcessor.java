@@ -145,7 +145,7 @@ public final class StagProcessor extends AbstractProcessor {
         }
         List<VariableElement> list = map.get(key);
         if (list == null) {
-            list = new ArrayList<>();
+            list = new ArrayList<>(1);
         }
         if (value != null) {
             list.add(value);

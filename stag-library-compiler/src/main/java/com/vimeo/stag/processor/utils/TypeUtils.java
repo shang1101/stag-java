@@ -232,7 +232,7 @@ public final class TypeUtils {
                     List<TypeMirror> genericTypes = getMemberTypes(member.getValue());
 
 
-                    List<TypeMirror> concreteGenericTypes = new ArrayList<>();
+                    List<TypeMirror> concreteGenericTypes = new ArrayList<>(genericTypes.size());
 
                     for (TypeMirror genericType : genericTypes) {
                         if (isConcreteType(genericType)) {
@@ -278,7 +278,7 @@ public final class TypeUtils {
 
     @NotNull
     private static List<TypeMirror> getMemberTypes(@NotNull TypeMirror element) {
-        List<TypeMirror> genericTypes = new ArrayList<>();
+        List<TypeMirror> genericTypes = new ArrayList<>(1);
         if (element.getKind() != TypeKind.TYPEVAR) {
             List<? extends TypeMirror> typeMirrors = ((DeclaredType) element).getTypeArguments();
             if (typeMirrors.isEmpty()) {
