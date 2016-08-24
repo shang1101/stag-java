@@ -191,8 +191,8 @@ public class StagGenerator {
                               "list")
                 .addCode("com.google.gson.TypeAdapter<T> typeAdapter = gson.getAdapter(clazz);\n" +
                          '\n' +
-                         "for (T object : list) {\n" +
-                         "\ttypeAdapter.write(out, object);\n" +
+                         "for (int n = 0, size = list.size(); n < size; n++) {\n" +
+                         "\ttypeAdapter.write(out, list.get(n));\n" +
                          "}\n")
                 .build();
     }
