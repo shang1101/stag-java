@@ -113,12 +113,10 @@ public class ParseGenerator {
                 .addParameter(
                         ParameterizedTypeName.get(ClassName.get(HashMap.class), ClassName.get(String.class),
                                                   genericType), "map")
-                .addCode("if (map == null) {\n" +
-                         "\treturn;\n" +
+                .addCode("writer.beginObject();\n" +
+                         "if (map != null) {\n" +
+                         "\tStag.writeMapToAdapter(gson, clazz, writer, map);\n" +
                          "}\n" +
-                         "writer.beginObject();\n" +
-                         "\n" +
-                         "Stag.writeMapToAdapter(gson, clazz, writer, map);\n" +
                          "\n" +
                          "writer.beginObject();\n")
                 .build();
@@ -162,12 +160,10 @@ public class ParseGenerator {
                 .addParameter(JsonWriter.class, "writer")
                 .addParameter(Class.class, "clazz")
                 .addParameter(ParameterizedTypeName.get(ClassName.get(ArrayList.class), genericType), "list")
-                .addCode("if (list == null) {\n" +
-                         "\treturn;\n" +
+                .addCode("writer.beginArray();\n" +
+                         "if (list != null) {\n" +
+                         "\tStag.writeListToAdapter(gson, clazz, writer, list);\n" +
                          "}\n" +
-                         "writer.beginArray();\n" +
-                         '\n' +
-                         "Stag.writeListToAdapter(gson, clazz, writer, list);\n" +
                          '\n' +
                          "writer.endArray();\n")
                 .build();
@@ -218,10 +214,7 @@ public class ParseGenerator {
                 .addParameter(ClassName.get(type), "object")
                 .addException(IOException.class)
                 .returns(void.class)
-                .addCode("\twriter.beginObject();\n" +
-                         "\tif (object == null) {\n" +
-                         "\t\treturn;\n" +
-                         "\t} else {\n");
+                .addCode("\twriter.beginObject();\n" + "\tif (object != null) {\n");
 
         for (Entry<Element, TypeMirror> element : elements.entrySet()) {
             String name = getJsonName(element.getKey());
@@ -264,11 +257,12 @@ public class ParseGenerator {
                 .addParameter(Gson.class, "gson")
                 .addParameter(JsonReader.class, "reader")
                 .addException(IOException.class)
-                .addCode("\tif (reader.peek() == com.google.gson.stream.JsonToken.NULL) {\n" +
+                .addCode("\tcom.google.gson.stream.JsonToken token = reader.peek();\n" +
+                         "\tif (token == com.google.gson.stream.JsonToken.NULL) {\n" +
                          "\t\treader.nextNull();\n" +
                          "\t\treturn null;\n" +
                          "\t}\n" +
-                         "\tif(reader.peek() != com.google.gson.stream.JsonToken.BEGIN_OBJECT) {\n" +
+                         "\tif(token != com.google.gson.stream.JsonToken.BEGIN_OBJECT) {\n" +
                          "\t\treader.skipValue();\n" +
                          "\t\treturn null;\n" +
                          "\t}\n" +
