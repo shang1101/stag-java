@@ -199,6 +199,30 @@ public class TypeUtilsUnitTest {
         assertFalse(TypeUtils.isParameterizedType(getTypeMirrorFromObject(testObject)));
     }
 
+    @SuppressWarnings("ConstantConditions")
+    @Test
+    public void doClassesMatch_isCorrect() throws Exception {
+
+        // Test parameterized objects
+        HashMap<String, String> testMap = new HashMap<>();
+        ArrayList<String> testList = new ArrayList<>();
+
+        // Ignore possible nulls from getTypeMirrorFromClass as if it is null this test will fail anyway
+        assertTrue(TypeUtils.doClassesMatch(getTypeMirrorFromClass(long.class), long.class));
+        assertTrue(TypeUtils.doClassesMatch(getTypeMirrorFromClass(boolean.class), boolean.class));
+        assertTrue(TypeUtils.doClassesMatch(getTypeMirrorFromClass(String.class), String.class));
+        assertTrue(TypeUtils.doClassesMatch(getTypeMirrorFromClass(int.class), int.class));
+        assertTrue(TypeUtils.doClassesMatch(getTypeMirrorFromObject(testMap), HashMap.class));
+        assertTrue(TypeUtils.doClassesMatch(getTypeMirrorFromObject(testList), ArrayList.class));
+
+        assertFalse(TypeUtils.doClassesMatch(getTypeMirrorFromObject(testMap), ArrayList.class));
+        assertFalse(TypeUtils.doClassesMatch(getTypeMirrorFromObject(testList), HashMap.class));
+        assertFalse(TypeUtils.doClassesMatch(getTypeMirrorFromClass(long.class), String.class));
+        assertFalse(TypeUtils.doClassesMatch(getTypeMirrorFromClass(boolean.class), String.class));
+        assertFalse(TypeUtils.doClassesMatch(getTypeMirrorFromClass(int.class), String.class));
+        assertFalse(TypeUtils.doClassesMatch(getTypeMirrorFromClass(String.class), int.class));
+    }
+
     @Test
     public void getOuterClassType_isCorrect() throws Exception {
 
@@ -285,8 +309,22 @@ public class TypeUtilsUnitTest {
 
     @Nullable
     private TypeMirror getTypeMirrorFromClass(@NotNull Class clazz) {
-        Element element = getElementFromClass(clazz);
-        return element != null ? element.asType() : null;
+        if (void.class.equals(clazz)) {
+            return types.getNoType(TypeKind.VOID);
+        } else if (clazz.isPrimitive()) {
+            String primitiveName = clazz.getName().toUpperCase();
+            TypeKind primitiveKind = TypeKind.valueOf(primitiveName);
+            return types.getPrimitiveType(primitiveKind);
+        } else if (clazz.isArray()) {
+            TypeMirror componentType = getTypeMirrorFromClass(clazz.getComponentType());
+            return types.getArrayType(componentType);
+        } else {
+            TypeElement element = elements.getTypeElement(clazz.getCanonicalName());
+            if (element == null) {
+                return null;
+            }
+            return element.asType();
+        }
     }
 
     @Nullable
